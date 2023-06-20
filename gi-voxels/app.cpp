@@ -1,3 +1,5 @@
+// This source file is built on top of learnOpenGL
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -6,16 +8,21 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <learnopengl/filesystem.h>
-#include <learnopengl/shader_m.h>
+#include <learnopengl/shader.h>
 #include <learnopengl/camera.h>
 #include <learnopengl/model.h>
 
 #include <iostream>
 
+#include <json/json.hpp>
+#include <gi-voxels/renderer.h>
+#include <icecream/icecream.hpp>
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
+static void LoadConfig(glm::vec3* light_pos, RenderConfig* render_config);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -31,13 +38,16 @@ bool firstMouse = true;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
-int main()
-{
+int main() {
+    RenderConfig render_config;
+    glm::vec3 light_pos;
+    LoadConfig(&light_pos, &render_config);
+
     // glfw: initialize and configure
     // ------------------------------
     glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 #ifdef __APPLE__
@@ -69,6 +79,8 @@ int main()
         return -1;
     }
 
+    std::cout << glGetString(GL_VERSION) << std::endl;
+
     // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
     stbi_set_flip_vertically_on_load(true);
 
@@ -76,17 +88,15 @@ int main()
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
 
-    // build and compile shaders
-    // -------------------------
-    Shader ourShader("gi-voxels/shader/1.model_loading.vs", "gi-voxels/shader/1.model_loading.fs");
-
     // load models
     // -----------
     Model ourModel(FileSystem::getPath("resources/Sponza/sponza.obj"));
+    ourModel.model_transform = glm::scale(glm::identity<glm::mat4>(), glm::vec3(0.02f, 0.02f, 0.02f));
+    Renderer renderer(&ourModel, render_config);
 
-    
-    // draw in wireframe
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    float xmin, xmax, ymin, ymax, zmin, zmax;
+    ourModel.GetBounds(&xmin, &xmax, &ymin, &ymax, &zmin, &zmax);
+    IC(xmin, xmax, ymin, ymax, zmin, zmax);
 
     // render loop
     // -----------
@@ -104,25 +114,7 @@ int main()
 
         // render
         // ------
-        glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // don't forget to enable shader before setting uniforms
-        ourShader.use();
-
-        // view/projection transformations
-        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 500.0f);
-        glm::mat4 view = camera.GetViewMatrix();
-        ourShader.setMat4("projection", projection);
-        ourShader.setMat4("view", view);
-
-        // render the loaded model
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
-        model = glm::scale(model, glm::vec3(0.01f, 0.01f, 0.01f));	// it's a bit too big for our scene, so scale it down
-        ourShader.setMat4("model", model);
-        ourModel.Draw(ourShader);
-
+        renderer.Render(camera, light_pos);
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -190,4 +182,39 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
     camera.ProcessMouseScroll(static_cast<float>(yoffset));
+}
+
+static void LoadConfig(glm::vec3* light_pos, RenderConfig* render_config) {
+    std::ifstream ifs(FileSystem::getPath("config.json"));
+    nlohmann::json config_json;
+    ifs >> config_json;
+
+    auto light_pos_config = config_json.at("light_pos");
+    light_pos->x = light_pos_config[0];
+    light_pos->y = light_pos_config[1];
+    light_pos->z = light_pos_config[2];
+    *light_pos = glm::normalize(*light_pos);
+
+    render_config->shadow_map_resolution  = config_json.at("shadow_map_resolution");
+    render_config->voxel_resolution       = config_json.at("voxel_resolution");
+    render_config->screen_width           = config_json.at("screen_width");
+    render_config->screen_height          = config_json.at("screen_height");
+    render_config->visualize_mipmap_level = config_json.at("visualize_mipmap_level");
+
+    string mode = config_json.at("mode");
+    if   (mode == "voxels") render_config->render_mode        = RenderConfig::VOXELS;
+    else if (mode == "direct_light") render_config->render_mode = RenderConfig::DIRECT_LIGHT;
+    else if (mode == "gi") render_config->render_mode         = RenderConfig::GI;
+    else {
+        std::cout << "ERROR: invalid render mode in config.json" << std::endl;
+        exit(-1);
+    }
+
+    // global variables
+    const unsigned int SCR_WIDTH = config_json.at("screen_width");
+    const unsigned int SCR_HEIGHT = config_json.at("screen_height");
+    float lastX = SCR_WIDTH / 2.0f;
+    float lastY = SCR_HEIGHT / 2.0f;
+
+    std::cout << config_json.dump(2) << std::endl;
 }

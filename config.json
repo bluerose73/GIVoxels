@@ -1,0 +1,14 @@
+{
+    "light_pos": [0.2, 1.0, 0.2],
+    "@light_pos": "the position of the light source / direction of light coming from",
+
+    "shadow_map_resolution": 1024,
+    "voxel_resolution": 256,
+    "screen_width": 800,
+    "screen_height": 600,
+
+    "mode": "direct_light",
+    "@mode": "direct_light: shadow_map only; voxels: viualize voxels; gi: cone tracing",
+
+    "visualize_mipmap_level": 0
+}

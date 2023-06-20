@@ -19,9 +19,11 @@
 #include <iostream>
 #include <map>
 #include <vector>
+#include <limits>
+#include <algorithm>
 using namespace std;
 
-unsigned int TextureFromFile(const char *path, const string &directory, bool gamma = false);
+inline unsigned int TextureFromFile(const char *path, const string &directory, bool gamma = false);
 
 class Model 
 {
@@ -31,19 +33,37 @@ public:
     vector<Mesh>    meshes;
     string directory;
     bool gammaCorrection;
+    glm::mat4 model_transform;
 
     // constructor, expects a filepath to a 3D model.
     Model(string const &path, bool gamma = false) : gammaCorrection(gamma)
     {
         loadModel(path);
+        model_transform = glm::identity<glm::mat4>();
     }
 
     // draws the model, and thus all its meshes
     void Draw(Shader &shader)
     {
+        shader.setMat4("model", model_transform);
         for(unsigned int i = 0; i < meshes.size(); i++)
             meshes[i].Draw(shader);
     }
+
+    void GetBounds(float* xmin, float* xmax, float* ymin, float* ymax, float* zmin, float* zmax) {
+        *xmin = *ymin = *zmin = numeric_limits<float>::max();
+        *xmax = *ymax = *zmax = -numeric_limits<float>::max();
+        float mxmin, mxmax, mymin, mymax, mzmin, mzmax;
+        for (unsigned int i = 0; i < meshes.size(); i++) {
+            meshes[i].GetBounds(&mxmin, &mxmax, &mymin, &mymax, &mzmin, &mzmax);
+            *xmin = min(*xmin, mxmin);
+            *xmax = max(*xmax, mxmax);
+            *ymin = min(*ymin, mymin);
+            *ymax = max(*ymax, mymax);
+            *zmin = min(*zmin, mzmin);
+            *zmax = max(*zmax, mzmax);
+        }
+    } 
     
 private:
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
@@ -203,7 +223,7 @@ private:
 };
 
 
-unsigned int TextureFromFile(const char *path, const string &directory, bool gamma)
+inline unsigned int TextureFromFile(const char *path, const string &directory, bool gamma)
 {
     string filename = string(path);
     filename = directory + '/' + filename;

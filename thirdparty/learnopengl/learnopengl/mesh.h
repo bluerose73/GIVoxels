@@ -10,6 +10,7 @@
 
 #include <string>
 #include <vector>
+#include <limits>
 using namespace std;
 
 #define MAX_BONE_INFLUENCE 4
@@ -92,6 +93,19 @@ public:
 
         // always good practice to set everything back to defaults once configured.
         glActiveTexture(GL_TEXTURE0);
+    }
+
+    void GetBounds(float* xmin, float* xmax, float* ymin, float* ymax, float* zmin, float* zmax) {
+        *xmin = *ymin = *zmin = numeric_limits<float>::max();
+        *xmax = *ymax = *zmax = -numeric_limits<float>::max();
+        for (auto& v : vertices) {
+            if (v.Position.x < *xmin) *xmin = v.Position.x;
+            if (v.Position.x > *xmax) *xmax = v.Position.x;
+            if (v.Position.y < *ymin) *ymin = v.Position.y;
+            if (v.Position.y > *ymax) *ymax = v.Position.y;
+            if (v.Position.z < *zmin) *zmin = v.Position.z;
+            if (v.Position.z > *zmax) *zmax = v.Position.z;
+        }
     }
 
 private:

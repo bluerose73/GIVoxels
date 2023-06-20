@@ -8,6 +8,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <learnopengl/filesystem.h>
 
 class Shader
 {
@@ -31,8 +32,8 @@ public:
         try 
         {
             // open files
-            vShaderFile.open(vertexPath);
-            fShaderFile.open(fragmentPath);
+            vShaderFile.open(FileSystem::getPath(vertexPath));
+            fShaderFile.open(FileSystem::getPath(fragmentPath));
             std::stringstream vShaderStream, fShaderStream;
             // read file's buffer contents into streams
             vShaderStream << vShaderFile.rdbuf();
@@ -46,7 +47,7 @@ public:
             // if geometry shader path is present, also load a geometry shader
             if(geometryPath != nullptr)
             {
-                gShaderFile.open(geometryPath);
+                gShaderFile.open(FileSystem::getPath(geometryPath));
                 std::stringstream gShaderStream;
                 gShaderStream << gShaderFile.rdbuf();
                 gShaderFile.close();
@@ -94,7 +95,7 @@ public:
         glDeleteShader(fragment);
         if(geometryPath != nullptr)
             glDeleteShader(geometry);
-
+        std::cout << "[INFO] Shader Init Success. " << vertexPath << " " << fragmentPath << std::endl;
     }
     // activate the shader
     // ------------------------------------------------------------------------
