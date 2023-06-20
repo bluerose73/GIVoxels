@@ -7,7 +7,7 @@
     "screen_width": 800,
     "screen_height": 600,
 
-    "mode": "direct_light",
+    "mode": "voxels",
     "@mode": "direct_light: shadow_map only; voxels: viualize voxels; gi: cone tracing",
 
     "visualize_mipmap_level": 0

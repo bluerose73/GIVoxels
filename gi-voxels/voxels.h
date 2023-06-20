@@ -22,7 +22,7 @@ private:
 
 	// visualization
 	GLuint visualization_fbo_;
-	GLuint front_face_texture_, back_face_texture_;
+	GLuint back_face_texture_;
 	Shader voxel_face_shader_, render_voxels_shader_;
 	GLuint cube_vao_, quad_vao_;
 };
