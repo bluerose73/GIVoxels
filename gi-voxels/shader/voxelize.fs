@@ -15,6 +15,7 @@ void main() {
 	ivec3 voxelPos = ivec3((clipPos * 0.5f + 0.5f) * voxelRes);
 
 	vec4 albedo = texture(texture_diffuse1, fTexCoords);
+	albedo = vec4(albedo.rgb * albedo.a, albedo.a);
 	imageStore(voxelAlbedo, voxelPos, albedo);
 
 	// vec4 normal = vec4(normalize(fNormal), 1.0f);

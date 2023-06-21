@@ -73,7 +73,7 @@ void main() {
     float shadow = ShadowCalculation(normal, fragPosLightSpace);
 
 	vec4 albedo = texture(texture_diffuse1, fTexCoords);
-    vec4 color  = vec4((1.0 - shadow) * diffuse * albedo.rgb, albedo.a);
+    vec4 color  = vec4((1.0 - shadow) * diffuse * albedo.rgb * albedo.a, albedo.a);
 	imageStore(voxelAlbedo, voxelPos, color);
 
     // The Atomic Avg won't compile on Nvidia, so we inlined it
