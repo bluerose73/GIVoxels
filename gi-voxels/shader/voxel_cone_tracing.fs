@@ -63,7 +63,7 @@ bool IsInsideVoxelTexture(const vec3 p, float e) {
 //
 // CONE TRACE FUNCTION
 // note: aperture = tan(radians * 0.5)
-vec4 trace_cone(const vec3 start_clip_pos, vec3 direction, float aperture, float startTracingOffset, float distance_max, float sampling_factor)
+vec4 trace_cone(const vec3 startPos, vec3 direction, float aperture, float startTracingOffset, float distance_max, float sampling_factor)
 {
 	aperture = max(0.1f, aperture); // inf loop if 0
 	direction = normalize(direction);
@@ -73,12 +73,11 @@ vec4 trace_cone(const vec3 start_clip_pos, vec3 direction, float aperture, float
 	
 	while (distance <= distance_max && accumulated_occlusion < 1.0f)
 	{
-		vec3 cone_clip_pos = start_clip_pos + (direction * distance);
-		vec3 cone_voxelgrid_pos = 0.5f * cone_clip_pos + vec3(0.5f); // from clipspace -1.0...1.0 to texcoords 0.0...1.0
+		vec3 curPos = startPos + (direction * distance);
 
 		float diameter = 2.0f * aperture * distance; 
 		float mipmap_level = log2(diameter * voxelRes.x);
-		vec4 voxel_sample = textureLod(voxelAlbedo, cone_voxelgrid_pos, mipmap_level);
+		vec4 voxel_sample = textureLod(voxelAlbedo, curPos, mipmap_level);
 
 		// front to back composition
 		accumulated_color += (1.0f - accumulated_occlusion) * voxel_sample.rgb; 
@@ -95,8 +94,8 @@ vec4 CalcIndirectSpecular(vec3 voxelPos, vec3 normal, vec3 worldPos, vec3 viewPo
 {
 	vec3 viewDirection = normalize(worldPos - viewPos);
 	vec3 coneDirection = normalize(reflect(viewDirection, normal));
-	vec3 start_clip_pos = voxelPos + (normal * startTracingOffset);
-	vec4 specular = trace_cone(start_clip_pos, coneDirection, SPECULAR_APERTURE,
+	vec3 startPos = voxelPos + (normal * startTracingOffset);
+	vec4 specular = trace_cone(startPos, coneDirection, SPECULAR_APERTURE,
 							   startTracingOffset, MAX_TRACE_DIST, SAMPLING_FACTOR);
 	return specular;
 }
@@ -117,8 +116,8 @@ vec4 CalcIndirectDiffuse(vec3 voxelPos, vec3 normal) {
 		coneDirection += DIFFUSE_CONE_DIRECTIONS[i].x * right + DIFFUSE_CONE_DIRECTIONS[i].z * up;
 		coneDirection = normalize(coneDirection);
 
-		vec3 start_clip_pos = voxelPos + normal * startTracingOffset;
-		accumulated_color += trace_cone(start_clip_pos, coneDirection, DIFFUSE_APERTURE,
+		vec3 startPos = voxelPos + normal * startTracingOffset;
+		accumulated_color += trace_cone(startPos, coneDirection, DIFFUSE_APERTURE,
 										startTracingOffset, MAX_TRACE_DIST, SAMPLING_FACTOR)
 							 * DIFFUSE_CONE_WEIGHTS[i];
 	}
@@ -132,8 +131,8 @@ void main() {
 	if (!IsInsideVoxelTexture(voxelPos, 0.01f)) {
 		discard;
 	}
-	FragColor = texture(voxelAlbedo, voxelPos);
-	return;
+	// FragColor = texture(voxelAlbedo, voxelPos);
+	// return;
 	vec3 normal  = normalize(texture(gNormal, TexCoords).xyz);
 	vec3 albedo  = texture(gAlbedoSpec, TexCoords).rgb;
 	float specIntencity = 0.5;
@@ -163,17 +162,13 @@ void main() {
 	// Calculate lightning in [0, 1] cube space
 	float indirectDiffuseIntensity = 0.5f;
 	float indirectSpecularIntensity = 0.5f;
-	float indirectAmbientIntensity = 0.5f;
 
 	vec4 diffuseTraceResult = CalcIndirectDiffuse(voxelPos, normal);
 	vec3 indirectDiffuse = diffuseTraceResult.rgb * indirectDiffuseIntensity;
 	float ao = diffuseTraceResult.a;
-	// vec3 indirectSpecular = CalcIndirectSpecular(voxelPos, normal, fragPos, viewPos).rgb * indirectSpecularIntensity;
-	vec3 indirectSpecular = vec3(0.0f);
-	// vec3 indirectAmbient = vec3(1.0 - ao) * indirectAmbientIntensity;
-	vec3 indirectAmbient = vec3(0.0f);
-	vec3 indirectLightning = (indirectDiffuse + indirectSpecular + indirectAmbient) * albedo;
+	vec3 indirectSpecular = CalcIndirectSpecular(voxelPos, normal, fragPos, viewPos).rgb * indirectSpecularIntensity;
+	vec3 indirectLightning = (indirectDiffuse + indirectSpecular) * albedo;
 
-	// FragColor = vec4(directLightning + indirectLightning, 1.0);
-	FragColor = vec4(indirectDiffuse, 1.0);
+	FragColor = vec4(directLightning + indirectLightning, 1.0);
+	// FragColor = vec4(indirectDiffuse, 1.0);
 }

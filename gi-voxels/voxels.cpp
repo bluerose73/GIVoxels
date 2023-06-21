@@ -207,6 +207,7 @@ void Voxels::RenderVoxels(Model* model, Camera& camera, int mipmap_level) {
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_3D, albedo_texture_);
 	render_voxels_shader_.setInt("voxelTexture", 2);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glViewport(0, 0, screen_width_, screen_height_);
@@ -216,5 +217,5 @@ void Voxels::RenderVoxels(Model* model, Camera& camera, int mipmap_level) {
     glBindVertexArray(quad_vao_);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     glBindVertexArray(0);
-
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 }

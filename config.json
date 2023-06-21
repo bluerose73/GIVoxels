@@ -8,7 +8,7 @@
     "screen_height": 600,
 
     "mode": "gi",
-    "@mode": "direct_light: shadow_map only; voxels: viualize voxels; voxels_w_direct_light: visualize voxels with direct light injected; gi: cone tracing",
+    "@mode": "voxels: shadow_map only; voxels: viualize voxels; voxels_w_direct_light: visualize voxels with direct light injected; gi: cone tracing",
 
-    "visualize_mipmap_level": 0
+    "visualize_mipmap_level": 1
 }
