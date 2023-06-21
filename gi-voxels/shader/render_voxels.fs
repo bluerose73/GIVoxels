@@ -22,7 +22,7 @@ void main()
 	vec3 ray_end = texture(backFaceTexture, TexCoords).xyz;
 	vec3 ray_direction = normalize(ray_end - ray_origin);
 
-	const float ray_step_size = 0.2f;
+	const float ray_step_size = 0.1f;
 	int total_samples = int(length(ray_end - ray_origin) / ray_step_size);
 
 	for (int i=0; i < total_samples; i++)

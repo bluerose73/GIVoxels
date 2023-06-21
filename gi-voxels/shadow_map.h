@@ -25,6 +25,7 @@ private:
     GLuint fbo_;
     GLuint shadow_texture_;
     glm::mat4 light_space_matrix_;
+    glm::vec3 light_pos_;
 };
 
 #endif

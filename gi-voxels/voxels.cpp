@@ -63,6 +63,7 @@ static const float quad_vertices[] = {
 Voxels::Voxels(int resolution, int screen_width, int screen_height)
 		: resolution_(resolution), screen_width_(screen_width), screen_height_(screen_height),
 		  voxelize_shader_("gi-voxels/shader/voxelize.vs", "gi-voxels/shader/voxelize.fs", "gi-voxels/shader/voxelize.gs"),
+		  voxelize_w_direct_light_shader_("gi-voxels/shader/voxelize.vs", "gi-voxels/shader/voxelize_w_direct_light.fs", "gi-voxels/shader/voxelize.gs"),
 		  voxel_face_shader_("gi-voxels/shader/voxel_face.vs", "gi-voxels/shader/voxel_face.fs"),
 		  render_voxels_shader_("gi-voxels/shader/render_voxels.vs", "gi-voxels/shader/render_voxels.fs") {
 	// voxel properties
@@ -74,8 +75,7 @@ Voxels::Voxels(int resolution, int screen_width, int screen_height)
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexStorage3D(GL_TEXTURE_3D, log2(resolution_), GL_RGBA8, resolution_, resolution_, resolution_);
-	// glTexSubImage3D(GL_TEXTURE_3D, 0, 0,0,0, resolution_ ,resolution_, resolution_, GL_RGBA, GL_FLOAT, data);
+	glTexStorage3D(GL_TEXTURE_3D, (int)log2(resolution_), GL_RGBA8, resolution_, resolution_, resolution_);
 	glGenerateMipmap(GL_TEXTURE_3D);
 
 	// rendering voxels
@@ -125,6 +125,10 @@ Voxels::Voxels(int resolution, int screen_width, int screen_height)
 	voxelize_shader_.use();
 	voxelize_shader_.setFloat("worldSize", WORLD_SIZE);
 	voxelize_shader_.setInt("voxelAlbedo", 0);
+
+	voxelize_w_direct_light_shader_.use();
+	voxelize_w_direct_light_shader_.setFloat("worldSize", WORLD_SIZE);
+	voxelize_w_direct_light_shader_.setInt("voxelAlbedo", 0);
 	IC();
 }
 
@@ -146,6 +150,25 @@ void Voxels::Voxelize(Model* model) {
 	glBindTexture(GL_TEXTURE_3D, albedo_texture_);
 	glGenerateMipmap(GL_TEXTURE_3D);
 
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+}
+
+void Voxels::VoxelizeWithDirectLight(Model* model, ShadowMap& shadow_map) {
+	voxelize_w_direct_light_shader_.use();
+	voxelize_w_direct_light_shader_.setMat4("model", model->model_transform);
+	shadow_map.ConfigureLightningShader(voxelize_w_direct_light_shader_);
+	glBindImageTexture(0, albedo_texture_, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+
+	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+
+	glm::vec4 clear_color(0.0f);
+	glClearTexImage(albedo_texture_, 0, GL_RGBA, GL_FLOAT, glm::value_ptr(clear_color));
+	glDisable(GL_CULL_FACE | GL_DEPTH_TEST | GL_BLEND);
+	glViewport(0, 0, resolution_, resolution_);
+
+	model->Draw(voxelize_w_direct_light_shader_);
+	glBindTexture(GL_TEXTURE_3D, albedo_texture_);
+	glGenerateMipmap(GL_TEXTURE_3D);
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 }
 

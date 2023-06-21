@@ -26,13 +26,15 @@ ShadowMap::ShadowMap(int resolution):
     IC();
 }
 
-void ShadowMap::Render(Model *model, const glm::vec3& lightPos) {
+void ShadowMap::Render(Model *model, const glm::vec3& light_pos) {
+    light_pos_ = light_pos;
+
     // 1. render depth of scene to texture (from light's perspective)
     // --------------------------------------------------------------
     glm::mat4 lightProjection, lightView;
     float bound = WORLD_SIZE * 1.4 / 2;
     lightProjection = glm::ortho(-bound, bound, -bound, bound, -bound, bound);
-    lightView = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
+    lightView = glm::lookAt(light_pos, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
     light_space_matrix_ = lightProjection * lightView;
     // render scene from light's point of view
     shader_.use();
@@ -49,6 +51,7 @@ void ShadowMap::Render(Model *model, const glm::vec3& lightPos) {
 void ShadowMap::ConfigureLightningShader(Shader& lightning_shader) {
     lightning_shader.use();
     lightning_shader.setInt("shadowMap", G_SHADOW_MAP_SAMPLER_ID);
+    lightning_shader.setVec3("lightPos", light_pos_);
     glActiveTexture(GL_TEXTURE0 + G_SHADOW_MAP_SAMPLER_ID);
     glBindTexture(GL_TEXTURE_2D, shadow_texture_);
     lightning_shader.setMat4("lightSpaceMatrix", light_space_matrix_);

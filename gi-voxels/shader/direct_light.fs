@@ -53,7 +53,7 @@ void main()
     vec3 fragPos = texture(gPosition, TexCoords).rgb;
     vec3 normal = normalize(texture(gNormal, TexCoords).rgb);
     vec3 color = texture(gAlbedoSpec, TexCoords).rgb;
-    // float Specular = texture(gAlbedoSpec, TexCoords).a;
+    float specIntencity = 0.5;  // TODO: sample from specular texture
 
     vec3 lightColor = vec3(1.0);
     // ambient
@@ -63,13 +63,12 @@ void main()
     float diff = max(dot(lightDir, normal), 0.0);
     vec3 diffuse = diff * lightColor;
     // specular
-    // vec3 viewDir = normalize(viewPos - fragPos);
-    // vec3 reflectDir = reflect(-lightDir, normal);
-    // float spec = 0.0;
-    // vec3 halfwayDir = normalize(lightDir + viewDir);  
-    // spec = pow(max(dot(normal, halfwayDir), 0.0), 64.0);
-    // vec3 specular = spec * lightColor;    
-	vec3 specular = vec3(0.0f);
+    vec3 viewDir = normalize(viewPos - fragPos);
+    vec3 reflectDir = reflect(-lightDir, normal);
+    vec3 halfwayDir = normalize(lightDir + viewDir);  
+    float spec = pow(max(dot(normal, halfwayDir), 0.0), 64.0);
+    vec3 specular = spec * lightColor * specIntencity;    
+
     // calculate shadow
     vec4 fragPosLightSpace = lightSpaceMatrix * vec4(fragPos, 1.0f);
     float shadow = ShadowCalculation(normal, fragPosLightSpace);                      

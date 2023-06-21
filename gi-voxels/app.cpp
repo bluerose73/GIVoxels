@@ -91,7 +91,7 @@ int main() {
     // load models
     // -----------
     Model ourModel(FileSystem::getPath("resources/Sponza/sponza.obj"));
-    ourModel.model_transform = glm::scale(glm::identity<glm::mat4>(), glm::vec3(0.02f, 0.02f, 0.02f));
+    ourModel.model_transform = glm::scale(glm::identity<glm::mat4>(), glm::vec3(0.026f, 0.026f, 0.026f));
     Renderer renderer(&ourModel, render_config);
 
     float xmin, xmax, ymin, ymax, zmin, zmax;
@@ -204,6 +204,7 @@ static void LoadConfig(glm::vec3* light_pos, RenderConfig* render_config) {
     string mode = config_json.at("mode");
     if   (mode == "voxels") render_config->render_mode        = RenderConfig::VOXELS;
     else if (mode == "direct_light") render_config->render_mode = RenderConfig::DIRECT_LIGHT;
+    else if (mode == "voxels_w_direct_light") render_config->render_mode = RenderConfig::VOXELS_W_DIRECT_LIGHT;
     else if (mode == "gi") render_config->render_mode         = RenderConfig::GI;
     else {
         std::cout << "ERROR: invalid render mode in config.json" << std::endl;
