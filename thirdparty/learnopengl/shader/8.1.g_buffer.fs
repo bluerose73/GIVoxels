@@ -12,6 +12,8 @@ uniform sampler2D texture_specular1;
 
 void main()
 {    
+    if (abs(texture(texture_specular1, TexCoords).a) < 0.01f)
+        discard;
     // store the fragment position vector in the first gbuffer texture
     gPosition = FragPos;
     // also store the per-fragment normals into the gbuffer
