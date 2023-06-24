@@ -1,5 +1,6 @@
 # GIVoxels
-An OpenGL implementation of Sparse Voxel Octree Cone Tracing.
+
+An OpenGL implementation of Voxel Cone Tracing.
 
 ## Build
 
@@ -17,13 +18,14 @@ The first build run may last several minutes, because it has to build all those 
 
 ## Run
 
-Find ``app`` or ``app.exe`` in ``build/`` directly. Run it.
+Find ``app`` or ``app.exe`` in ``build/`` directory. Run it.
 
 ## Configuration
 
 You can config run-time behaviour of the shading demo by modifying ``config.json``.
 
 The most important option is ``"mode"``. It can be one of the following values:
+
 - gi: global illuminaiton
 - voxels: visualize voxels
 - voxels_w_direct_light: visualize voxels with direct light
@@ -31,8 +33,9 @@ The most important option is ``"mode"``. It can be one of the following values:
 
 ## Credits
 
-Our code built on top of [LearnOpenGL](learnopengl.com) (See ``thirdparty/learnopengl``).
+Our code is built on top of [LearnOpenGL](learnopengl.com) (See ``thirdparty/learnopengl``).
 
 Other Implementations on GitHub:
+
 - [VXGI](https://github.com/mcela/vxgi)
 - [VcTest](https://github.com/AdamYuan/VcTest)
